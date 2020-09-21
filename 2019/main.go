@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"runtime"
-	"github.com/1cf2/AOC_golang/tree/master/2019/day1"
+
+	Day1 "github.com/1cf2/AOC_golang/2019/day1"
 )
 
 func main() {
