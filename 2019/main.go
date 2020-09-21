@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"runtime"
 
-	Day1 "github.com/1cf2/AOC_golang/2019/day1"
-	Day2 "github.com/1cf2/AOC_golang/2019/day2"
+	Day1 "github.com/1cf2/aocGo/2019/day1"
+	Day2 "github.com/1cf2/aocGo/2019/day2"
 )
 
 func main() {
