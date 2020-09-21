@@ -1,4 +1,4 @@
-# AOC_golang
+# aocGo
 
 adventure of code in golang
 
