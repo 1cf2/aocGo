@@ -1,5 +1,6 @@
-package Day1
+package day1
 
+// InputData ...
 type InputData struct{}
 
 func (e InputData) day1() []int {
