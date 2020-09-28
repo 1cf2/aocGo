@@ -18,6 +18,8 @@ type MatrixDot struct {
 	wire1Pass                 bool
 	wire2Pass                 bool
 	manhattanDistanceToCenter int
+	wire1Steps                int
+	wire2Steps                int
 }
 
 // MatrixRange ...
@@ -35,6 +37,7 @@ type Day3 struct {
 	matrix       [][]MatrixDot
 	matrixCenter Coordinate
 	matrixRange  MatrixRange
+	crossPoints  []MatrixDot
 }
 
 //Max ...
@@ -107,19 +110,9 @@ func (e Day3) CreateMatrix() [][]MatrixDot {
 func (e *Day3) MatrixInitial() [][]MatrixDot {
 	// create empty map in correct size
 	matrix := e.CreateMatrix()
-	xShift := 0 - e.matrixRange.minX
-	yShift := 0 - e.matrixRange.minY
-	// set center coordinate, it is the starting point
-	e.matrixCenter.x = xShift
-	e.matrixCenter.y = yShift
+	e.matrixCenter.x = -e.matrixRange.minX
+	e.matrixCenter.y = -e.matrixRange.minY
 	// initialize each point in the map and calculate the distance to center
-	for m := range matrix {
-		for n := range matrix[m] {
-			matrix[m][n].relativeCoord.y = n - yShift
-			matrix[m][n].relativeCoord.x = m - xShift
-			matrix[m][n].GetManhattanDistance()
-		}
-	}
 	e.matrix = matrix
 	return matrix
 }
@@ -132,58 +125,77 @@ func (e *MatrixDot) GetCoordinate(c Coordinate) Coordinate {
 	}
 }
 
+// PassThroughMatrixDot ...
+func PassThroughMatrixDot(fromPoint MatrixDot, currentPoint *MatrixDot, wireNumber int, distance int) {
+	switch wireNumber {
+	case 1:
+		currentPoint.wire1Pass = true
+		if currentPoint.wire1Steps == 0 {
+			currentPoint.wire1Steps = fromPoint.wire1Steps + distance
+		}
+	case 2:
+		currentPoint.wire2Pass = true
+		if currentPoint.wire2Steps == 0 {
+			currentPoint.wire2Steps = fromPoint.wire2Steps + distance
+		}
+	default:
+		panic("invalid wire")
+	}
+}
+
 // WireStep ...
 func WireStep(fromPoint MatrixDot, move Move, wireNumber int, e *Day3) MatrixDot {
 	toPoint := MatrixDot{}
+	switch wireNumber {
+	case 1:
+		if fromPoint.wire1Steps < 0 {
+			fromPoint.wire1Steps = 0
+		}
+	case 2:
+		if fromPoint.wire2Steps < 0 {
+			fromPoint.wire2Steps = 0
+		}
+	default:
+		panic("invalid wire")
+	}
 	// get absolute coord for from point
 	coord := fromPoint.GetCoordinate(e.matrixCenter)
+	currentPoint := &e.matrix[coord.x][coord.y]
 	switch move.direction {
-	case 1: // up
+	case 1: // Up
 		for i := 0; i <= move.distance; i++ {
-			switch wireNumber {
-			case 1:
-				e.matrix[coord.x][coord.y+i].wire1Pass = true
-			case 2:
-				e.matrix[coord.x][coord.y+i].wire2Pass = true
-			default:
-				panic("invalid wire")
-			}
+			currentPoint = &e.matrix[coord.x][coord.y+i]
+			currentPoint.relativeCoord.y = coord.y + i - e.matrixCenter.y
+			currentPoint.relativeCoord.x = coord.x - e.matrixCenter.x
+			currentPoint.GetManhattanDistance()
+			PassThroughMatrixDot(fromPoint, currentPoint, wireNumber, i)
 		}
 		toPoint = e.matrix[coord.x][coord.y+move.distance]
 	case 2: // Right
 		for i := 0; i <= move.distance; i++ {
-			switch wireNumber {
-			case 1:
-				e.matrix[coord.x+i][coord.y].wire1Pass = true
-			case 2:
-				e.matrix[coord.x+i][coord.y].wire2Pass = true
-			default:
-				panic("invalid wire")
-			}
+			currentPoint = &e.matrix[coord.x+i][coord.y]
+			currentPoint.relativeCoord.y = coord.y - e.matrixCenter.y
+			currentPoint.relativeCoord.x = coord.x + i - e.matrixCenter.x
+			currentPoint.GetManhattanDistance()
+			PassThroughMatrixDot(fromPoint, currentPoint, wireNumber, i)
 		}
 		toPoint = e.matrix[coord.x+move.distance][coord.y]
 	case 3: // Down
 		for i := 0; i <= move.distance; i++ {
-			switch wireNumber {
-			case 1:
-				e.matrix[coord.x][coord.y-i].wire1Pass = true
-			case 2:
-				e.matrix[coord.x][coord.y-i].wire2Pass = true
-			default:
-				panic("invalid wire")
-			}
+			currentPoint = &e.matrix[coord.x][coord.y-i]
+			currentPoint.relativeCoord.y = coord.y - i - e.matrixCenter.y
+			currentPoint.relativeCoord.x = coord.x - e.matrixCenter.x
+			currentPoint.GetManhattanDistance()
+			PassThroughMatrixDot(fromPoint, currentPoint, wireNumber, i)
 		}
 		toPoint = e.matrix[coord.x][coord.y-move.distance]
 	case 4: // Left
 		for i := 0; i <= move.distance; i++ {
-			switch wireNumber {
-			case 1:
-				e.matrix[coord.x-i][coord.y].wire1Pass = true
-			case 2:
-				e.matrix[coord.x-i][coord.y].wire2Pass = true
-			default:
-				panic("invalid wire")
-			}
+			currentPoint = &e.matrix[coord.x-i][coord.y]
+			currentPoint.relativeCoord.y = coord.y - e.matrixCenter.y
+			currentPoint.relativeCoord.x = coord.x - i - e.matrixCenter.x
+			currentPoint.GetManhattanDistance()
+			PassThroughMatrixDot(fromPoint, currentPoint, wireNumber, i)
 		}
 		toPoint = e.matrix[coord.x-move.distance][coord.y]
 	default:
@@ -195,18 +207,22 @@ func WireStep(fromPoint MatrixDot, move Move, wireNumber int, e *Day3) MatrixDot
 // RunWires ...
 func (e *Day3) RunWires() {
 	MatrixCenterPoint := e.matrix[e.matrixCenter.x][e.matrixCenter.y]
+
+	//run wire 1 from matrix center
 	currentPoint := MatrixCenterPoint
 	for i := range e.wire1 {
 		currentPoint = WireStep(currentPoint, e.wire1[i], 1, e)
 	}
 	MatrixCenterPoint.wire1Pass = true
+	MatrixCenterPoint.wire1Steps = 0
+
+	//run wire 2 from matrix center
 	currentPoint = MatrixCenterPoint
 	for i := range e.wire2 {
 		currentPoint = WireStep(currentPoint, e.wire2[i], 2, e)
-		// currentPoint.relativeCoord.x += e.matrixCenter.x
-		// currentPoint.relativeCoord.y += e.matrixCenter.y
 	}
 	MatrixCenterPoint.wire2Pass = true
+	MatrixCenterPoint.wire2Steps = 0
 }
 
 // GetManhattanDistance ...
@@ -215,33 +231,57 @@ func (e *MatrixDot) GetManhattanDistance() int {
 	return e.manhattanDistanceToCenter
 }
 
-// Part1 ...
-func (e Day3) Part1() {
-	fmt.Println("  Part1: ")
-	crossPoints := []MatrixDot{}
+// FindCrossPoints ...
+func (e *Day3) FindCrossPoints() {
+	//save all cross points in array
+	e.crossPoints = []MatrixDot{}
 	for m, a := range e.matrix {
 		for n := range a {
 			if a[n].wire1Pass && a[n].wire2Pass {
 				// ignore center point
 				if !reflect.DeepEqual(a[n].GetCoordinate(e.matrixCenter), e.matrixCenter) {
 					//save all cross point into array
-					crossPoints = append(crossPoints, a[n])
+					e.crossPoints = append(e.crossPoints, a[n])
 					fmt.Println("    cross point: " + strconv.Itoa(m) + "," + strconv.Itoa(n) +
 						" x: " + strconv.Itoa(a[n].relativeCoord.x) +
 						" y: " + strconv.Itoa(a[n].relativeCoord.y) +
-						" distance: " + strconv.Itoa(a[n].manhattanDistanceToCenter))
+						" manhattan distance: " + strconv.Itoa(a[n].manhattanDistanceToCenter) +
+						" wire1 distance: " + strconv.Itoa(a[n].wire1Steps) +
+						" wire2 distance: " + strconv.Itoa(a[n].wire2Steps))
 				}
 			}
 		}
 	}
-	shortestDistance := crossPoints[0].manhattanDistanceToCenter
-	for i := range crossPoints {
-		if shortestDistance > crossPoints[i].manhattanDistanceToCenter {
-			shortestDistance = crossPoints[i].manhattanDistanceToCenter
+}
+
+// Part1 ...
+func (e Day3) Part1() {
+	fmt.Println("  Part1: ")
+	// get shortest distance
+	shortestDistance := e.crossPoints[0].manhattanDistanceToCenter
+	for i := range e.crossPoints {
+		if shortestDistance > e.crossPoints[i].manhattanDistanceToCenter {
+			shortestDistance = e.crossPoints[i].manhattanDistanceToCenter
 		}
 	}
 	fmt.Println("    **********************")
-	fmt.Println("    short distance: " + strconv.Itoa(shortestDistance))
+	fmt.Println("    shortest manhattan distance: " + strconv.Itoa(shortestDistance))
+	fmt.Println("    **********************")
+}
+
+// Part2 ...
+func (e Day3) Part2() {
+	fmt.Println("  Part2: ")
+	// get shortest wire distance
+	shortestDistance := e.crossPoints[0].wire1Steps + e.crossPoints[0].wire2Steps
+	for i := range e.crossPoints {
+		if shortestDistance > (e.crossPoints[i].wire1Steps + e.crossPoints[i].wire2Steps) {
+			shortestDistance = e.crossPoints[i].wire1Steps + e.crossPoints[i].wire2Steps
+		}
+	}
+
+	fmt.Println("    **********************")
+	fmt.Println("    shortest combined wire distance: " + strconv.Itoa(shortestDistance))
 	fmt.Println("    **********************")
 }
 
@@ -261,6 +301,10 @@ func Start() {
 	e.MatrixInitial()
 	// run all wires in the map and mark all point passed
 	e.RunWires()
+	// find all cross points
+	e.FindCrossPoints()
 	// do part 1
 	e.Part1()
+	// do part 2
+	e.Part2()
 }
