@@ -38,8 +38,64 @@ func NewGraph() *Graph {
 	}
 }
 
-// toString ...
-func (e *Graph) toString() string {
+// ToString for Graph
+func (e *Graph) ToString() string {
+	rs, _ := json.Marshal(e)
+	return string(rs)
+}
+
+// D4DataTable ...
+type D4DataTable struct {
+	Kind map[string]bool `json:"kind"`
+	Rows []D4Row         `json:"rows"`
+}
+
+// D4Row ...
+type D4Row struct {
+	SixDigit        string `json:"six digit"`
+	TwoDigitsSame   string `json:"tow digits same"`
+	NeverDecreasing string `json:"never decreasing"`
+}
+
+// NewD4DataTable ...
+func NewD4DataTable() *D4DataTable {
+	return &D4DataTable{
+		Kind: map[string]bool{"table": true},
+		Rows: []D4Row{},
+	}
+}
+
+// ToString for D4DataTable
+func (e *D4DataTable) ToString() string {
+	rs, _ := json.Marshal(e)
+	return string(rs)
+}
+
+// MeshData ...
+type MeshData struct {
+	Type string `json:"type"`
+	Mode string `json:"mode,omitempty"`
+	X    []int  `json:"x"`
+	Y    []int  `json:"y"`
+	Z    []int  `json:"z"`
+}
+
+// Mesh ...
+type Mesh struct {
+	Kind map[string]bool `json:"kind"`
+	Data []MeshData      `json:"data"`
+}
+
+// NewMesh ...
+func NewMesh() *Mesh {
+	return &Mesh{
+		Kind: map[string]bool{"plotly": true},
+		Data: []MeshData{},
+	}
+}
+
+// ToString for Mesh
+func (e *Mesh) ToString() string {
 	rs, _ := json.Marshal(e)
 	return string(rs)
 }

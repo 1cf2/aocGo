@@ -7,6 +7,7 @@ import (
 	Day1 "github.com/1cf2/aocGo/2019/day1"
 	Day2 "github.com/1cf2/aocGo/2019/day2"
 	Day3 "github.com/1cf2/aocGo/2019/day3"
+	Day4 "github.com/1cf2/aocGo/2019/day4"
 )
 
 func main() {
@@ -16,4 +17,5 @@ func main() {
 	Day1.Start()
 	Day2.Start()
 	Day3.Start()
+	Day4.Start()
 }
